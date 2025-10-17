@@ -3,5 +3,4 @@ tf-keras
 torch
 fastapi
 uvicorn
-transformers
 pydantic
