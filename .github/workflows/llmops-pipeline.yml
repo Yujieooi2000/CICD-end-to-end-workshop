@@ -35,6 +35,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Free disk space (GitHub-hosted runner)
+        run: |
+          echo "Before cleanup:" && df -h
+          docker system prune -af || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache || true
+          echo "After cleanup:" && df -h
+
+
       # 4️⃣ Build Docker image
       - name: Build Docker image (load into local Docker)
         run: |
