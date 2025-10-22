@@ -47,7 +47,13 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           format: table
-          exit-code: 0
+          scanners: vuln
+          skip-db-update: false
+          skip-java-db-update: true
+          vuln-type: os,library
+          cache-dir: /tmp/trivy-cache
+          --skip-version-check: true
+
 
       # 6️⃣ Push image to Docker Hub
       - name: Push Docker image
