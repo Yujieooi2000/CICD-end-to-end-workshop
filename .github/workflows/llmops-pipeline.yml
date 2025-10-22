@@ -73,8 +73,9 @@ jobs:
           version: 'latest'
 
       # 8️⃣ Configure Kubeconfig
-      - name: Set up Kubeconfig (DigitalOcean)
+      - name: Set up Kubeconfig
         run: |
+          mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
       # 9️⃣ Deploy to Kubernetes
