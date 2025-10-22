@@ -39,6 +39,13 @@ jobs:
         run: |
           docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
 
+      - name: Free disk space before scan
+        run: |
+          echo "Before cleanup:" && df -h
+          docker system prune -af || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
+          echo "After cleanup:" && df -h
+
       # 5️⃣ Run Trivy scan
       - name: Security scan with Trivy
         uses: aquasecurity/trivy-action@master
@@ -48,12 +55,9 @@ jobs:
           ignore-unfixed: true
           format: table
           scanners: vuln
-          skip-db-update: false
-          skip-java-db-update: true
+          skip-version-check: true
           vuln-type: os,library
           cache-dir: /tmp/trivy-cache
-          --skip-version-check: true
-
 
       # 6️⃣ Push image to Docker Hub
       - name: Push Docker image
