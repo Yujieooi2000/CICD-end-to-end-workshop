@@ -17,6 +17,7 @@ jobs:
       DEPLOYMENT_FILE: k8s/deployment.yaml
       SERVICE_FILE: k8s/service.yaml
       INGRESS_FILE: k8s/ingress.yaml
+      CLUSTER_NAME: my-cluster   # 🔹 change if your cluster name differs
 
     steps:
       # 1️⃣ Checkout code
@@ -34,19 +35,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 4️⃣ Build the Docker image
+      # 4️⃣ Build Docker image
       - name: Build Docker image
-        run: |
-          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
+        run: docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
 
-      - name: Free disk space before scan
+      # 5️⃣ Free up disk space before scan
+      - name: Free disk space
         run: |
           echo "Before cleanup:" && df -h
           docker system prune -af || true
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
           echo "After cleanup:" && df -h
 
-      # 5️⃣ Run Trivy scan
+      # 6️⃣ Run Trivy security scan
       - name: Security scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -59,21 +60,22 @@ jobs:
           vuln-type: os,library
           cache-dir: /tmp/trivy-cache
 
-      # 6️⃣ Push image to Docker Hub
-      - name: Build Docker image
+      # 7️⃣ Push image to Docker Hub
+      - name: Push Docker image
         run: |
-          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
+          docker push $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG
           docker images
 
-      # 7️⃣ Setup kubectl
+      # 8️⃣ Install kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
-      - name: Install doctl (DigitalOcean CLI)
-        run: |
-          sudo snap install doctl --classic || true
+      # 9️⃣ Install & authenticate doctl (DigitalOcean CLI)
+      - name: Install doctl
+        run: | 
+          sudo snap install doctl --classic || true 
           doctl version
 
       - name: Authenticate with DigitalOcean
@@ -81,15 +83,23 @@ jobs:
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: doctl auth init -t $DIGITALOCEAN_ACCESS_TOKEN
 
-      # 8️⃣ Configure Kubeconfig
-      - name: Set up Kubeconfig
+      # 🔹 Fetch live kubeconfig (recommended method)
+      - name: Configure kubeconfig from DigitalOcean
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+          doctl kubernetes cluster kubeconfig save $CLUSTER_NAME --expiry-seconds 600
+          export KUBECONFIG=$HOME/.kube/config
+          echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+          kubectl config current-context
 
-      # 9️⃣ Deploy to Kubernetes
+      # 🔹 Deploy to Kubernetes (disable validation to avoid openapi issues)
       - name: Deploy to Kubernetes
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
-          kubectl apply -f $DEPLOYMENT_FILE
-          kubectl apply -f $SERVICE_FILE
-          kubectl apply -f $INGRESS_FILE
+          kubectl apply -f $DEPLOYMENT_FILE --validate=false
+          kubectl apply -f $SERVICE_FILE --validate=false
+          kubectl apply -f $INGRESS_FILE --validate=false
