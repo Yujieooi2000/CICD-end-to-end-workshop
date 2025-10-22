@@ -37,7 +37,7 @@ jobs:
       # 4️⃣ Build the Docker image
       - name: Build Docker image
         run: |
-          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG .
+          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
 
       # 5️⃣ Run Trivy scan
       - name: Security scan with Trivy
