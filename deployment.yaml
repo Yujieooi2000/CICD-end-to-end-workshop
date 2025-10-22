@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpt-huggingface
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gpt-hf-pod
+  template:
+    metadata:
+      labels:
+        app: gpt-hf-pod
+    spec:
+      containers:
+        - name: gptcontainer
+          image: 867344474015.dkr.ecr.us-east-1.amazonaws.com/cicd_workshop:testing  # Replace with your actual ECR image URI
+          ports:
+            - containerPort: 8000
