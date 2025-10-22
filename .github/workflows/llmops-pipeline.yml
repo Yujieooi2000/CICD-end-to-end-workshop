@@ -60,9 +60,11 @@ jobs:
           cache-dir: /tmp/trivy-cache
 
       # 6️⃣ Push image to Docker Hub
-      - name: Push Docker image
+      - name: Build Docker image
         run: |
-          docker push $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG
+          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
+          docker images
+
 
       # 7️⃣ Setup kubectl
       - name: Set up kubectl
