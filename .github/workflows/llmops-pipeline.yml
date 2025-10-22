@@ -52,14 +52,6 @@ jobs:
             --load
           docker images
 
-      # 5️⃣ Free up disk space before scan
-      - name: Free disk space
-        run: |
-          echo "Before cleanup:" && df -h
-          docker system prune -af || true
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
-          echo "After cleanup:" && df -h
-
       # 6️⃣ Run Trivy security scan
       - name: Security scan with Trivy
         uses: aquasecurity/trivy-action@master
