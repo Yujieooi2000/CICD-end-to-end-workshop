@@ -37,7 +37,9 @@ jobs:
 
       # 4️⃣ Build Docker image
       - name: Build Docker image
-        run: docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
+        run:  |
+          docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
+          docker images
 
       # 5️⃣ Free up disk space before scan
       - name: Free disk space
@@ -63,8 +65,7 @@ jobs:
       # 7️⃣ Push image to Docker Hub
       - name: Push Docker image
         run: |
-          docker push $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
-          docker images
+          docker push $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG
 
       # 8️⃣ Install kubectl
       - name: Set up kubectl
