@@ -65,12 +65,20 @@ jobs:
           docker build -t $DOCKER_USER/$IMAGE_NAME:$DOCKER_TAG -f src/Dockerfile src/
           docker images
 
-
       # 7️⃣ Setup kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
+
+      - name: Install doctl 
+        run: |
+          sudo snap install doctl --classic || curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m).tar.gz | tar -xzv
+          sudo mv doctl /usr/local/bin
+
+      - name: Authenticate with DigitalOcean
+        run: |
+          doctl auth init -t ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       # 8️⃣ Configure Kubeconfig
       - name: Set up Kubeconfig
