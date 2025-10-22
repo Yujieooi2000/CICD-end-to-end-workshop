@@ -89,13 +89,13 @@ jobs:
         run: doctl auth init -t $DIGITALOCEAN_ACCESS_TOKEN
 
       # 🔹 Fetch live kubeconfig (recommended method)
-      - name: Configure kubeconfig from DigitalOcean
+      - name: Configure kubeconfig
         env:
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: |
           mkdir -p $HOME/.kube
-          doctl kubernetes cluster kubeconfig save $CLUSTER_NAME --expiry-seconds 600
-          export KUBECONFIG=$HOME/.kube/config
+          doctl kubernetes cluster kubeconfig show $CLUSTER_NAME --expiry-seconds 600 > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
           kubectl config current-context
 
