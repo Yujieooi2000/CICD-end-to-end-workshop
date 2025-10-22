@@ -71,10 +71,12 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Install doctl 
+      - name: Install doctl (DigitalOcean CLI)
         run: |
-          sudo snap install doctl --classic || curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m).tar.gz | tar -xzv
-          sudo mv doctl /usr/local/bin
+          curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-$(uname -m).tar.gz -o doctl.tar.gz
+          tar -xzf doctl.tar.gz
+          sudo mv doctl /usr/local/bin/
+          doctl version
 
       - name: Authenticate with DigitalOcean
         run: |
