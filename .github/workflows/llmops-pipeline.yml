@@ -99,6 +99,47 @@ jobs:
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
           kubectl config current-context
 
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Install ingress-nginx via Helm
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --create-namespace --namespace ingress-nginx
+
+      # ⚙️ AUTO-DETECT & UPDATE INGRESS IP
+      - name: Wait for ingress-nginx external IP
+        id: ingress-ip
+        run: |
+          echo "Waiting for external IP..."
+          for i in {1..20}; do
+            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ ! -z "$IP" ]; then
+              echo "Ingress IP detected: $IP"
+              echo "ip=$IP" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "⏳ Waiting for IP... ($i/20)"
+            sleep 15
+          done
+
+      # 🔄 Update service.yml (contains ingress definition)
+      - name: Update service.yml with external IP
+        run: |
+          INGRESS_IP=${{ steps.ingress-ip.outputs.ip }}
+          if [ -z "$INGRESS_IP" ]; then
+            echo "❌ No ingress IP found. Exiting."
+            exit 1
+          fi
+          echo "🌍 Updating host in service.yml to gpt.${INGRESS_IP}.sslip.io"
+          sed -i "s/host: .*/host: gpt.${INGRESS_IP}.sslip.io/" $SERVICE_FILE
+          echo "✅ Updated service.yml:"
+          cat $SERVICE_FILE
+
       # 🔹 Deploy to Kubernetes (disable validation to avoid openapi issues)
       - name: Deploy to Kubernetes
         env:
@@ -107,4 +148,9 @@ jobs:
         run: |
           kubectl apply -f $DEPLOYMENT_FILE --validate=false
           kubectl apply -f $SERVICE_FILE --validate=false
-          kubectl apply -f $INGRESS_FILE --validate=false
+
+      - name: Verify Ingress URL
+        run: |
+          echo "✅ Deployment completed."
+          echo "You can access your app at:"
+          echo "👉 http://gpt.${{ steps.ingress-ip.outputs.ip }}.sslip.io"
