@@ -96,3 +96,6 @@ curl -X POST http://gpt.<YOUR_OWN_EXTERNAL_IP>.sslip.io/chat -H "Content-Type: a
 
 #To exit later:
 #deactivate
+
+
+-f src/Dockerfile src/
